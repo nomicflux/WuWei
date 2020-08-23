@@ -1,6 +1,7 @@
 package com.nomicflux.wuwei;
 
 import com.jnape.palatable.lambda.functions.Fn1;
+import com.jnape.palatable.lambda.io.IO;
 
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.nomicflux.wuwei.ST.st;
@@ -42,12 +43,12 @@ public final class STRef<S, A> {
         }
     }
 
-    public ST<S, STRef<S, A>> modifySTRef(Fn1<A, A> fn) {
-        return readSTRef().flatMap(x -> writeSTRef(fn.apply(x)));
-    }
-
     public static <A> STRefWriter<A> writer() {
         return new STRefWriter<>();
+    }
+
+    public ST<S, STRef<S, A>> modifySTRef(Fn1<A, A> fn) {
+        return readSTRef().flatMap(x -> writeSTRef(fn.apply(x)));
     }
 
     public static class STRefModifier<A> {

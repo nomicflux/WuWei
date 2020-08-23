@@ -5,11 +5,14 @@ import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.recursion.RecursiveResult;
 import com.jnape.palatable.lambda.functor.Applicative;
 import com.jnape.palatable.lambda.functor.builtin.Lazy;
+import com.jnape.palatable.lambda.io.IO;
 import com.jnape.palatable.lambda.monad.Monad;
 import com.jnape.palatable.lambda.monad.MonadRec;
 
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
-import static com.jnape.palatable.lambda.functions.builtin.fn1.Id.id;
+import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
+import static com.jnape.palatable.lambda.functions.recursion.Trampoline.trampoline;
+import static com.jnape.palatable.lambda.io.IO.io;
 import static com.nomicflux.wuwei.World.world;
 
 public final class ST<S, A> implements MonadRec<A, ST<S, ?>> {
@@ -19,23 +22,13 @@ public final class ST<S, A> implements MonadRec<A, ST<S, ?>> {
         this.stFn = stFn;
     }
 
-    // @TODO: finish implementation
     @Override
     public <B> ST<S, B> trampolineM(Fn1<? super A, ? extends MonadRec<RecursiveResult<A, B>, ST<S, ?>>> fn) {
-        return new ST<S, B>(w -> {
-            Tuple2<World<S>, A> apply = stFn.apply(w);
-            Tuple2<World<S>, B> o = apply.into((w2, a) -> {
-                ST<S, RecursiveResult<A, B>> apply1 = fn.apply(a).coerce();
-                Tuple2<World<S>, RecursiveResult<A, B>> apply2 = apply1.stFn.apply(w2);
-                Tuple2<World<S>, B> o1 = apply2.biMapR(rr -> rr.match(r -> {
-                            B o2 = null;
-                            return o2;
-                        },
-                        id()));
-                return o1;
-            });
-            return o;
-        });
+        return new ST<S, B>(stFn.fmap(trampoline(into((w, a) -> fn.apply(a)
+                .<ST<S, RecursiveResult<A, B>>>coerce().stFn
+                .fmap(into((w2, aOrB) -> aOrB
+                        .biMap(a2 -> tuple(w2, a2),
+                                b2 -> tuple(w2, b2)))).apply(w)))));
     }
 
     @Override
@@ -73,11 +66,15 @@ public final class ST<S, A> implements MonadRec<A, ST<S, ?>> {
         return MonadRec.super.discardR(appB).coerce();
     }
 
+    public IO<A> toIO() {
+        return io(this::runST);
+    }
+
     public A runST() {
         return stFn.apply(world())._2();
     }
 
     public static <S, A> ST<S, A> st(A payload) {
-            return new ST<>(world -> tuple(world, payload));
+        return new ST<>(world -> tuple(world, payload));
     }
 }
