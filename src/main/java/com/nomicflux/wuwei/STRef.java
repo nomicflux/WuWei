@@ -1,42 +1,28 @@
 package com.nomicflux.wuwei;
 
 import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.functor.Functor;
 
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.nomicflux.wuwei.ST.st;
 
-public final class STRef<S, A> implements Functor<A, STRef<S, ?>> {
+public final class STRef<S, A> {
     private A payload;
 
     private STRef(A a) {
         this.payload = a;
     }
 
-    @Override
-    public <B> STRef<S, B> fmap(Fn1<? super A, ? extends B> fn) {
-        return new STRef<>(fn.apply(payload));
-    }
-
-    private static class STSTRef<S, A> {
-        private final static STSTRef<?, ?> INSTANCE = new STSTRef<>();
+    private static class STRefCreator<S, A> {
+        private final static STRefCreator<?, ?> INSTANCE = new STRefCreator<>();
 
         private ST<S, STRef<S, A>> createSTRef(A payload) {
             return st(new STRef<S, A>(payload));
         }
     }
 
-    private static class STRefProducer {
-        private final static STRefProducer INSTANCE = new STRefProducer();
-
-        @SuppressWarnings("unchecked")
-        private <A> STSTRef<?, A> prepare() {
-            return (STSTRef<?, A>) STSTRef.INSTANCE;
-        }
-    }
-
-    public static STRefProducer stRefProducer() {
-        return STRefProducer.INSTANCE;
+    @SuppressWarnings("unchecked")
+    public static <A> STRefCreator<?, A> stRefCreator() {
+        return (STRefCreator<?, A>) STRefCreator.INSTANCE;
     }
 
     public ST<S, A> readSTRef() {
@@ -51,7 +37,7 @@ public final class STRef<S, A> implements Functor<A, STRef<S, ?>> {
     }
 
     public static class STRefWriter<A> {
-        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> writer(A a) {
+        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> write(A a) {
             return s -> s.writeSTRef(a);
         }
     }
@@ -65,7 +51,7 @@ public final class STRef<S, A> implements Functor<A, STRef<S, ?>> {
     }
 
     public static class STRefModifier<A> {
-        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> modifier(Fn1<A, A> fn) {
+        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> modify(Fn1<A, A> fn) {
             return s -> s.modifySTRef(fn);
         }
     }
@@ -75,10 +61,10 @@ public final class STRef<S, A> implements Functor<A, STRef<S, ?>> {
     }
 
     public static void main(String[] args) {
-        Integer i = stRefProducer().<Integer>prepare().createSTRef(0)
-                .flatMap(STRef.<Integer>modifier().modifier(x -> x + 1))
-                .flatMap(STRef.<Integer>writer().writer(10))
-                .flatMap(STRef.<Integer>modifier().modifier(x -> x * 2))
+        Integer i = STRef.<Integer>stRefCreator().createSTRef(0)
+                .flatMap(STRef.<Integer>modifier().modify(x -> x + 1))
+                .flatMap(STRef.<Integer>writer().write(10))
+                .flatMap(s -> s.modifySTRef(x -> x * 2))
                 .flatMap(STRef::readSTRef)
                 .runST();
 
