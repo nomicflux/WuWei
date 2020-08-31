@@ -14,13 +14,21 @@
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.5.2</junit.platform.version>
+        <lambda.version>5.2.0</lambda.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.jnape.palatable</groupId>
             <artifactId>lambda</artifactId>
-            <version>5.2.0</version>
+            <version>${lambda.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.jnape.palatable</groupId>
+            <artifactId>lambda</artifactId>
+            <version>${lambda.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.jnape.palatable</groupId>

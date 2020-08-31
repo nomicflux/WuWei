@@ -33,7 +33,7 @@ public final class ST<S, A> implements MonadRec<A, ST<S, ?>> {
 
     @Override
     public <B> ST<S, B> flatMap(Fn1<? super A, ? extends Monad<B, ST<S, ?>>> f) {
-        return new ST<S, B>(w -> stFn.apply(w).into((w2, a) -> f.apply(a).<ST<S, B>>coerce().stFn.apply(w2)));
+        return new ST<S, B>(w -> this.stFn.apply(w).into((w2, a) -> f.apply(a).<ST<S, B>>coerce().stFn.apply(w2)));
     }
 
     @Override
@@ -43,7 +43,7 @@ public final class ST<S, A> implements MonadRec<A, ST<S, ?>> {
 
     @Override
     public <B> ST<S, B> fmap(Fn1<? super A, ? extends B> fn) {
-        return MonadRec.super.<B>fmap(fn).coerce();
+        return new ST<S, B>(w -> stFn.apply(w).fmap(fn));
     }
 
     @Override
