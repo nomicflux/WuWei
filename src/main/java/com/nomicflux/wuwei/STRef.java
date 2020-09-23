@@ -63,7 +63,7 @@ public final class STRef<S, A> {
                     .match(
                             fn2 -> modification.match(
                                     fn1 -> new STRefModifier<A>(a(fn1.fmap(fn2))),
-                                    constantly(new STRefModifier<A>(a(fn2::apply)))
+                                    b -> new STRefModifier<>(b(fn2.apply(b)))
                             ),
                             b -> new STRefModifier<A>(b(b))
                     );
