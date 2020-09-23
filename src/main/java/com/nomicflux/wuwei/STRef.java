@@ -51,7 +51,7 @@ public final class STRef<S, A> {
             this.modification = modification;
         }
 
-        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> modify() {
+        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> run() {
             return modification.match(
                     fn -> s -> s.modifySTRef(fn),
                     a -> s -> s.writeSTRef(a)

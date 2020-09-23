@@ -9,7 +9,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class STRefTest {
 
@@ -60,7 +59,7 @@ public class STRefTest {
         STRef.STRefModifier<Integer> setAndInc = set.and(inc);
 
         Integer res = STRef.<Integer>stRefCreator().createSTRef(expectedAlmost - 10)
-                .flatMap(setAndInc.modify())
+                .flatMap(setAndInc.run())
                 .flatMap(STRef::readSTRef)
                 .runST();
         assertThat(res, equalTo(expectedAlmost + 1));
@@ -80,7 +79,7 @@ public class STRefTest {
         STRef.STRefModifier<Integer> incAndSet = inc.and(set);
 
         Integer res = STRef.<Integer>stRefCreator().createSTRef(expected - 10)
-                .flatMap(incAndSet.modify())
+                .flatMap(incAndSet.run())
                 .flatMap(STRef::readSTRef)
                 .runST();
         assertThat(res, equalTo(expected));
@@ -89,7 +88,7 @@ public class STRefTest {
 
     @Test
     public void modifiesInPlace() {
-        Integer original = 0;
+        int original = 0;
         AtomicInteger base = new AtomicInteger(original);
 
         STRef.STRefModifier<AtomicInteger> inc = STRef.modifier(x -> {
@@ -98,7 +97,7 @@ public class STRefTest {
         });
 
         AtomicInteger res = STRef.<AtomicInteger>stRefCreator().createSTRef(base)
-                .flatMap(inc.modify())
+                .flatMap(inc.run())
                 .flatMap(STRef::readSTRef)
                 .runST();
 
