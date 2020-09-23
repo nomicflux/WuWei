@@ -50,7 +50,7 @@ runs at about the same speed as the simpler:
 However, for heavier-weight objects, the `STRef` implementation is significantly faster. For example, using the
 following class:
 
-   public static class Foo {
+    public static class Foo {
         private final Iterable<Integer> m;
         private int n;
 
