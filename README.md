@@ -36,7 +36,7 @@ Unlike the `IO` monad:
 ## Performance
 
 For lightweight types, regular lambda functions will work fine, if not better. For example, this `STRef` summation
-algorithm
+algorithm:
 
     Integer integer = STRef.<Integer>stRefCreator()
                            .createSTRef(0)
@@ -80,7 +80,8 @@ the following `STRef` implementation with a mutable object runs locally at about
                    .flatMap(STRef::readSTRef)
                    .runST();
 
-while the `foldLeft` implementation with immutable objects runs around 13000 - 15000ms:
+while the `foldLeft` implementation with immutable objects runs around 13000 - 15000ms for a lazily-constructed
+  `Iterable`, and 1300 - 1500ms if the `Iterable` is forced into an `ArrayList`:
 
     Foo foo = foldLeft((acc, n) -> acc.incImmutable(), 
                        new Foo(take(10, iterate(n -> n + 1, 1)), 0),
