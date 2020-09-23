@@ -18,5 +18,4 @@ public class STTest {
     public Equivalence<ST<?, Integer>> testReader() {
         return equivalence(st(0), ST::runST);
     }
-
 }

@@ -1,8 +1,11 @@
 package com.nomicflux.wuwei;
 
+import com.jnape.palatable.lambda.adt.choice.Choice2;
 import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.io.IO;
 
+import static com.jnape.palatable.lambda.adt.choice.Choice2.a;
+import static com.jnape.palatable.lambda.adt.choice.Choice2.b;
+import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.nomicflux.wuwei.ST.st;
 
@@ -13,10 +16,10 @@ public final class STRef<S, A> {
         this.payload = a;
     }
 
-    private static class STRefCreator<S, A> {
+    public static class STRefCreator<S, A> {
         private final static STRefCreator<?, ?> INSTANCE = new STRefCreator<>();
 
-        private ST<S, STRef<S, A>> createSTRef(A payload) {
+        public ST<S, STRef<S, A>> createSTRef(A payload) {
             return st(new STRef<S, A>(payload));
         }
     }
@@ -37,38 +40,41 @@ public final class STRef<S, A> {
         }).unsafePerformIO());
     }
 
-    public static class STRefWriter<A> {
-        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> write(A a) {
-            return s -> s.writeSTRef(a);
-        }
-    }
-
-    public static <A> STRefWriter<A> writer() {
-        return new STRefWriter<>();
-    }
-
     public ST<S, STRef<S, A>> modifySTRef(Fn1<A, A> fn) {
         return readSTRef().flatMap(x -> writeSTRef(fn.apply(x)));
     }
 
     public static class STRefModifier<A> {
-        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> modify(Fn1<A, A> fn) {
-            return s -> s.modifySTRef(fn);
+        private final Choice2<Fn1<A, A>, A> modification;
+
+        private STRefModifier(Choice2<Fn1<A, A>, A> modification) {
+            this.modification = modification;
+        }
+
+        public <S> Fn1<STRef<S, A>, ST<S, STRef<S, A>>> modify() {
+            return modification.match(
+                    fn -> s -> s.modifySTRef(fn),
+                    a -> s -> s.writeSTRef(a)
+            );
+        }
+
+        public STRefModifier<A> and(STRefModifier<A> next) {
+            return next.modification
+                    .match(
+                            fn2 -> modification.match(
+                                    fn1 -> new STRefModifier<A>(a(fn1.fmap(fn2))),
+                                    constantly(new STRefModifier<A>(a(fn2::apply)))
+                            ),
+                            b -> new STRefModifier<A>(b(b))
+                    );
         }
     }
 
-    public static <A> STRefModifier<A> modifier() {
-        return new STRefModifier<>();
+    public static <A> STRefModifier<A> modifier(Fn1<A, A> fn) {
+        return new STRefModifier<>(a(fn));
     }
 
-    public static void main(String[] args) {
-        Integer i = STRef.<Integer>stRefCreator().createSTRef(0)
-                .flatMap(STRef.<Integer>modifier().modify(x -> x + 1))
-                .flatMap(STRef.<Integer>writer().write(10))
-                .flatMap(s -> s.modifySTRef(x -> x * 2))
-                .flatMap(STRef::readSTRef)
-                .runST();
-
-        System.out.println(i);
+    public static <A> STRefModifier<A> writer(A a) {
+        return new STRefModifier<>(b(a));
     }
 }
