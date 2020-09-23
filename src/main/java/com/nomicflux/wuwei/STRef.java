@@ -2,12 +2,9 @@ package com.nomicflux.wuwei;
 
 import com.jnape.palatable.lambda.adt.choice.Choice2;
 import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.functions.recursion.RecursiveResult;
 
 import static com.jnape.palatable.lambda.adt.choice.Choice2.a;
 import static com.jnape.palatable.lambda.adt.choice.Choice2.b;
-import static com.jnape.palatable.lambda.functions.builtin.fn3.FoldLeft.foldLeft;
-import static com.jnape.palatable.lambda.functions.recursion.Trampoline.trampoline;
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.nomicflux.wuwei.ST.st;
 
@@ -77,30 +74,7 @@ public final class STRef<S, A> {
         return new STRefModifier<>(a(fn));
     }
 
-    public static <A> STRefModifier<A> trampoliner(Fn1<A, RecursiveResult<A, A>> fn) {
-        return new STRefModifier<>(a(trampoline(fn)));
-    }
-
     public static <A> STRefModifier<A> writer(A a) {
         return new STRefModifier<>(b(a));
-    }
-
-    public static class Foo {
-        private final Iterable<Integer> m;
-        private int n;
-
-        public Foo(Iterable<Integer> m, int n) {
-            this.m = m;
-            this.n = n;
-        }
-
-        public Foo incImmutable() {
-            return new Foo(m, n + foldLeft(Integer::sum, 0, m));
-        }
-
-        public Foo incMutable() {
-            this.n += foldLeft(Integer::sum, 0, m);
-            return this;
-        }
     }
 }
