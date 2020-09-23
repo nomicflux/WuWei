@@ -72,7 +72,8 @@ following class:
         }
     }
 
-the following `STRef` implementation with a mutable object runs locally at about 180 - 200ms after JVM optimizations:
+the following `STRef` implementation with a mutable object runs locally at about 180 - 200ms for a lazy collection and
+20-25ms for a strict collection, after JVM optimizations:
 
     Foo foo = STRef.<Foo>stRefCreator()
                    .createSTRef(new Foo(take(10, iterate(n -> n + 1, 1)), 0))
