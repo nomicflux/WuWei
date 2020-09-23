@@ -35,7 +35,8 @@ Unlike the `IO` monad:
 
 ## Performance
 
-For lightweight types, regular lambda functions will work fine, if not better:
+For lightweight types, regular lambda functions will work fine, if not better. For example, this `STRef` summation
+algorithm
 
     Integer integer = STRef.<Integer>stRefCreator()
                            .createSTRef(0)
@@ -46,6 +47,8 @@ For lightweight types, regular lambda functions will work fine, if not better:
 runs at about the same speed as the simpler:
 
     Integer integer = foldLeft((acc, n) -> acc + n, 0, replicate(1_000_000, 1));
+
+and takes significantly longer if the trampolining is done in-place in a monadic context (~10x the time).
 
 However, for heavier-weight objects, the `STRef` implementation is significantly faster. For example, using the
 following class:
@@ -69,7 +72,7 @@ following class:
         }
     }
 
-the following `STRef` implementation with a mutable object runs locally at about 180-200ms after JVM optimizations:
+the following `STRef` implementation with a mutable object runs locally at about 180 - 200ms after JVM optimizations:
 
     Foo foo = STRef.<Foo>stRefCreator()
                    .createSTRef(new Foo(take(10, iterate(n -> n + 1, 1)), 0))
