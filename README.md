@@ -1,6 +1,6 @@
 # WuWei - Functional Mutability
 
-Relies on [Lamda](https://github.com/palatable/lambda/).
+Relies on [Lambda](https://github.com/palatable/lambda/).
 
 This library includes the `ST` monad along with `STRef`s to provide delimited scopes for safe mutations in Java.
 
