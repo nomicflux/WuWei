@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class STRefModifierTest {
+
     @Test
     public void modifierPipelineCompiles() {
         Integer expectedAlmost = 0;
