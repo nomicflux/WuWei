@@ -171,10 +171,10 @@ Foo fooLazy = STRef.<Foo>stRefCreator()
 
 ArrayList<Integer> m = toCollection(ArrayList::new, take(10, iterate(n -> n + 1, 1));
 Foo fooStrict = STRef.<Foo>stRefCreator()
-                    .createSTRef(new Foo(m, 0))
-                    .flatMap(s -> s.modifySTRef(trampoline(f -> f.n > 10_000_000 ? terminate(f) : recurse(f.incMutable()))))
-                    .flatMap(STRef::readSTRef)
-                    .runST();
+                     .createSTRef(new Foo(m, 0))
+                     .flatMap(s -> s.modifySTRef(trampoline(f -> f.n > 10_000_000 ? terminate(f) : recurse(f.incMutable()))))
+                     .flatMap(STRef::readSTRef)
+                     .runST();
 ```
 
 while the `foldLeft` implementation with immutable objects runs around 13000 - 15000ms for a lazily-constructed
