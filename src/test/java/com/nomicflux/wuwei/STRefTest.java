@@ -44,5 +44,4 @@ public class STRefTest {
                 .runST();
         assertThat(res, equalTo(expectedAlmost * 2));
     }
-
 }
