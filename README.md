@@ -114,7 +114,14 @@ STRefModifier<Integer> writeTenThenTriple = writeTen.and(triple);
 
 Since the only two mutable actions allowed for an `STRef` are writing and modification, and writing will overwrite
 whatever is currently in the reference whatever it is, `STRefModifier` features an optimization where a `write` will
-wipe the slate clean and start from scratch, no matter how many other actions have been `added` before it.
+wipe the slate clean and start from scratch, no matter how many other actions have been `added` before it. So the
+following:
+
+```Java
+STRefModifier<Integer> tripleThenWriteTen = triple.and(writeTen);
+```
+
+is the same as `writeTen` on its own.
 
 ## Performance
 
