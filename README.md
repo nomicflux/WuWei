@@ -58,7 +58,9 @@ ST<?, ? extends STRef<?, Integer>> stRef = STRef.<Integer>stRefCreator()
                                                 .createSTRef(0);
 ```
 
-Because of the type captures, this stRef is unusable in any further operations. To resolve this, read the `STRef`:
+Because of the type captures, this variable stRef is unusable in any further operations - the type inference engine
+would need to unify both the capture in `ST` and in `STRef` and verify they are the same, which it can't do. To resolve this, 
+read the `STRef`:
 
 ```Java
 ST<?, Integer> stResult = STRef.<Integer>stRefCreator()
