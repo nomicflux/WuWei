@@ -16,11 +16,11 @@ Unlike the `IO` monad:
 
 ```Java
 Integer res = STRef.<Integer>stRefCreator()
-    .createSTRef(-10)
-    .flatMap(ref -> ref.writeSTRef(1))
-    .flatMap(ref -> ref.modifySTRef(value -> value * 2))
-    .flatMap(ref -> ref.readSTRef)
-    .runST();
+                   .createSTRef(-10)
+                   .flatMap(ref -> ref.writeSTRef(1))
+                   .flatMap(ref -> ref.modifySTRef(value -> value * 2))
+                   .flatMap(ref -> ref.readSTRef)
+                   .runST();
 assertThat(res, equalTo(2));
 ```
 
@@ -32,10 +32,10 @@ STRefModifier<Integer> inc = modifier(value -> value * 2);
 STRefModifier<Integer> setAndInc = set.and(inc);
 
 Integer res = STRef.<Integer>stRefCreator()
-    .createSTRef(-10)
-    .flatMap(setAndInc.run())
-    .flatMap(STRef::readSTRef)
-    .runST();
+                   .createSTRef(-10)
+                   .flatMap(setAndInc.run())
+                   .flatMap(STRef::readSTRef)
+                   .runST();
 assertThat(res, equalTo(2));
 ```
 
