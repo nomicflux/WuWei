@@ -14,7 +14,8 @@ Unlike the `IO` monad:
 
 ### Using normal monadic composition:
 
-    Integer res = STRef.<Integer>stRefCreator().createSTRef(-10)
+    Integer res = STRef.<Integer>stRefCreator()
+        .createSTRef(-10)
         .flatMap(ref -> ref.writeSTRef(1))
         .flatMap(ref -> ref.modifySTRef(value -> value * 2))
         .flatMap(ref -> ref.readSTRef)
@@ -27,11 +28,73 @@ Unlike the `IO` monad:
     STRefModifier<Integer> inc = modifier(value -> value * 2);
     STRefModifier<Integer> setAndInc = set.and(inc);
 
-    Integer res = STRef.<Integer>stRefCreator().createSTRef(-10)
+    Integer res = STRef.<Integer>stRefCreator()
+        .createSTRef(-10)
         .flatMap(setAndInc.run())
         .flatMap(STRef::readSTRef)
         .runST();
     assertThat(res, equalTo(2));
+
+## STRef Usage
+
+The purpose of an `STRef` is that all of its actions take place in the `ST` monad. This involves passing an internal
+type parameter through the chain of operations. If at any point one attempts to break the chain of operations and
+release a mutable `STRef` into the wild, type inference will break. One must:
+1. Create an STRef
+2. Perform the operations on an STRef
+3. Read the STRef
+4. And, finally, runST to release the read value from the `ST` monad.
+
+### Creating and Running an STRef
+
+In order to create an STRef, use an stRefCreator:
+
+    ST<?, ? extends STRef<?, Integer>> stRef = STRef.<Integer>stRefCreator()
+                                                    .createSTRef(0);
+
+Because of the type captures, this stRef is unusable in any further operations. To resolve this, read the `STRef`:
+
+    ST<?, Integer> stResult = STRef.<Integer>stRefCreator()
+                                   .createSTRef(10)
+                                   .flatMap(STRef::readSTRef);
+
+At which point the result no longer would leak an STRef, and can be run:
+
+    Integer ten = integerST.runST();
+
+### Performing operations with flatmaps
+
+The two operations that be used to mutate an `STRef` are `STRef#writeSTRef` and `STRef#modifySTRef`:
+
+    Integer writtenAndModified = STRef.<Integer>stRefCreator()
+                                      .createSTRef(10)
+                                      .flatMap(stRef -> stRef.writeSTRef(0))
+                                      .flatMap(stRef -> stRef.modifySTRef(x -> x + 1))
+                                      .flatMap(STRef::readSTRef)
+                                      .runST();
+
+`STRef#writeSTRef` will replace the reference value. `STRef#modifySTRef` will modify the reference value in place using
+the provided function.
+
+### Performing operations with STRefModifier
+
+As stated above, a chain of actions on an `STRef` cannot be abstracted out, as it would leak the `STRef` and fail type
+checking. In order to create compositional units of work on `STRefs`, one can use an `STRefModifier` instead. To create
+a write action, use `STRefModifier#writer`:
+
+    STRefModifier<Integer> writeTen = writer(10);
+
+And to modify, `STRefModifier#modifier`:
+
+    STRefModifier<Integer> triple = modifier(x -> x * 3);
+
+These can be combined:
+
+    STRefModifier<Integer> writeTenThenTriple = writeTen.and(triple);
+
+Since the only two mutable actions allowed for an `STRef` are writing and modification, and writing will overwrite
+whatever is currently in the reference whatever it is, `STRefModifier` features an optimization where a `write` will
+wipe the slate clean and start from scratch, no matter how many other actions have been `added` before it.
 
 ## Performance
 
