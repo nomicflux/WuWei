@@ -14,26 +14,30 @@ Unlike the `IO` monad:
 
 ### Using normal monadic composition:
 
-    Integer res = STRef.<Integer>stRefCreator()
-        .createSTRef(-10)
-        .flatMap(ref -> ref.writeSTRef(1))
-        .flatMap(ref -> ref.modifySTRef(value -> value * 2))
-        .flatMap(ref -> ref.readSTRef)
-        .runST();
-    assertThat(res, equalTo(2));
+```Java
+Integer res = STRef.<Integer>stRefCreator()
+    .createSTRef(-10)
+    .flatMap(ref -> ref.writeSTRef(1))
+    .flatMap(ref -> ref.modifySTRef(value -> value * 2))
+    .flatMap(ref -> ref.readSTRef)
+    .runST();
+assertThat(res, equalTo(2));
+```
 
 ### Abstracting out effects:
 
-    STRefModifier<Integer> set = writer(1);
-    STRefModifier<Integer> inc = modifier(value -> value * 2);
-    STRefModifier<Integer> setAndInc = set.and(inc);
+```Java
+STRefModifier<Integer> set = writer(1);
+STRefModifier<Integer> inc = modifier(value -> value * 2);
+STRefModifier<Integer> setAndInc = set.and(inc);
 
-    Integer res = STRef.<Integer>stRefCreator()
-        .createSTRef(-10)
-        .flatMap(setAndInc.run())
-        .flatMap(STRef::readSTRef)
-        .runST();
-    assertThat(res, equalTo(2));
+Integer res = STRef.<Integer>stRefCreator()
+    .createSTRef(-10)
+    .flatMap(setAndInc.run())
+    .flatMap(STRef::readSTRef)
+    .runST();
+assertThat(res, equalTo(2));
+```
 
 ## STRef Usage
 
@@ -49,29 +53,37 @@ release a mutable `STRef` into the wild, type inference will break. One must:
 
 In order to create an STRef, use an stRefCreator:
 
-    ST<?, ? extends STRef<?, Integer>> stRef = STRef.<Integer>stRefCreator()
-                                                    .createSTRef(0);
+```Java
+ST<?, ? extends STRef<?, Integer>> stRef = STRef.<Integer>stRefCreator()
+                                                .createSTRef(0);
+```
 
 Because of the type captures, this stRef is unusable in any further operations. To resolve this, read the `STRef`:
 
-    ST<?, Integer> stResult = STRef.<Integer>stRefCreator()
-                                   .createSTRef(10)
-                                   .flatMap(STRef::readSTRef);
+```Java
+ST<?, Integer> stResult = STRef.<Integer>stRefCreator()
+                               .createSTRef(10)
+                               .flatMap(STRef::readSTRef);
+```
 
 At which point the result no longer would leak an STRef, and can be run:
 
-    Integer ten = integerST.runST();
+```Java
+Integer ten = integerST.runST();
+```
 
 ### Performing operations with flatmaps
 
 The two operations that be used to mutate an `STRef` are `STRef#writeSTRef` and `STRef#modifySTRef`:
 
-    Integer writtenAndModified = STRef.<Integer>stRefCreator()
-                                      .createSTRef(10)
-                                      .flatMap(stRef -> stRef.writeSTRef(0))
-                                      .flatMap(stRef -> stRef.modifySTRef(x -> x + 1))
-                                      .flatMap(STRef::readSTRef)
-                                      .runST();
+```Java
+Integer writtenAndModified = STRef.<Integer>stRefCreator()
+                                  .createSTRef(10)
+                                  .flatMap(stRef -> stRef.writeSTRef(0))
+                                  .flatMap(stRef -> stRef.modifySTRef(x -> x + 1))
+                                  .flatMap(STRef::readSTRef)
+                                  .runST();
+```
 
 `STRef#writeSTRef` will replace the reference value. `STRef#modifySTRef` will modify the reference value in place using
 the provided function.
@@ -82,15 +94,21 @@ As stated above, a chain of actions on an `STRef` cannot be abstracted out, as i
 checking. In order to create compositional units of work on `STRefs`, one can use an `STRefModifier` instead. To create
 a write action, use `STRefModifier#writer`:
 
-    STRefModifier<Integer> writeTen = writer(10);
+```Java
+STRefModifier<Integer> writeTen = writer(10);
+```
 
 And to modify, `STRefModifier#modifier`:
 
-    STRefModifier<Integer> triple = modifier(x -> x * 3);
+```Java
+STRefModifier<Integer> triple = modifier(x -> x * 3);
+```
 
 These can be combined:
 
-    STRefModifier<Integer> writeTenThenTriple = writeTen.and(triple);
+```Java
+STRefModifier<Integer> writeTenThenTriple = writeTen.and(triple);
+```
 
 Since the only two mutable actions allowed for an `STRef` are writing and modification, and writing will overwrite
 whatever is currently in the reference whatever it is, `STRefModifier` features an optimization where a `write` will
@@ -101,53 +119,75 @@ wipe the slate clean and start from scratch, no matter how many other actions ha
 For lightweight types, regular lambda functions will work fine, if not better. For example, this `STRef` summation
 algorithm:
 
-    Integer integer = STRef.<Integer>stRefCreator()
-                           .createSTRef(0)
-                           .flatMap(s -> s.modifySTRef(trampoline(a -> a > 1_000_000 ? terminate(a) : recurse(a + 1))))
-                           .flatMap(STRef::readSTRef)
-                           .runST();
+```Java
+Integer integer = STRef.<Integer>stRefCreator()
+                       .createSTRef(0)
+                       .flatMap(s -> s.modifySTRef(trampoline(a -> a > 1_000_000 ? terminate(a) : recurse(a + 1))))
+                       .flatMap(STRef::readSTRef)
+                       .runST();
+```
 
 runs at about the same speed as the simpler:
 
-    Integer integer = foldLeft((acc, n) -> acc + n, 0, replicate(1_000_000, 1));
+```Java
+Integer integer = foldLeft((acc, n) -> acc + n, 0, replicate(1_000_000, 1));
+```
 
 and takes significantly longer if the trampolining is done in-place in a monadic context (~10x the time).
 
 However, for heavier-weight objects, the `STRef` implementation is significantly faster. For example, using the
 following class:
 
-    public static class Foo {
-        private final Iterable<Integer> m;
-        private int n;
+```Java
+public static class Foo {
+    private final Iterable<Integer> m;
+    private int n;
 
-        public Foo(Iterable<Integer> m, int n) {
-            this.m = m;
-            this.n = n;
-        }
-
-        public Foo incImmutable() {
-            return new Foo(m, n + foldLeft(Integer::sum, 0, m));
-        }
-
-        public Foo incMutable() {
-            this.n += foldLeft(Integer::sum, 0, m);
-            return this;
-        }
+    public Foo(Iterable<Integer> m, int n) {
+        this.m = m;
+        this.n = n;
     }
+
+    public Foo incImmutable() {
+        return new Foo(m, n + foldLeft(Integer::sum, 0, m));
+    }
+
+    public Foo incMutable() {
+        this.n += foldLeft(Integer::sum, 0, m);
+        return this;
+    }
+}
+```
 
 the following `STRef` implementation with a mutable object runs locally at about 180 - 200ms for a lazy collection and
 20-25ms for a strict collection, after JVM optimizations:
 
-    Foo foo = STRef.<Foo>stRefCreator()
+```Java
+Foo fooLazy = STRef.<Foo>stRefCreator()
                    .createSTRef(new Foo(take(10, iterate(n -> n + 1, 1)), 0))
                    .flatMap(s -> s.modifySTRef(trampoline(f -> f.n > 10_000_000 ? terminate(f) : recurse(f.incMutable()))))
                    .flatMap(STRef::readSTRef)
                    .runST();
 
+ArrayList<Integer> m = toCollection(ArrayList::new, take(10, iterate(n -> n + 1, 1));
+Foo fooStrict = STRef.<Foo>stRefCreator()
+                    .createSTRef(new Foo(m, 0))
+                    .flatMap(s -> s.modifySTRef(trampoline(f -> f.n > 10_000_000 ? terminate(f) : recurse(f.incMutable()))))
+                    .flatMap(STRef::readSTRef)
+                    .runST();
+```
+
 while the `foldLeft` implementation with immutable objects runs around 13000 - 15000ms for a lazily-constructed
   `Iterable`, and 1300 - 1500ms if the `Iterable` is forced into an `ArrayList`:
 
-    Foo foo = foldLeft((acc, n) -> acc.incImmutable(), 
+```Java
+Foo fooLazy = foldLeft((acc, n) -> acc.incImmutable(), 
                        new Foo(take(10, iterate(n -> n + 1, 1)), 0),
                        replicate(10_000_000, 1));
+
+ArrayList<Integer> m = toCollection(ArrayList::new, take(10, iterate(n -> n + 1, 1));
+Foo fooStrict = foldLeft((acc, n) -> acc.incImmutable(), 
+                         new Foo(m, 0),
+                         replicate(10_000_000, 1));
+```
 
