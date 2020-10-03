@@ -6,7 +6,7 @@
 
     <groupId>io.ataraxic.nomicflux</groupId>
     <artifactId>wuwei</artifactId>
-    <version>0.2</version>
+    <version>0.3-SNAPSHOT</version>
 
     <name>WuWei</name>
     <description>
