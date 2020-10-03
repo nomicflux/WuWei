@@ -42,6 +42,7 @@
         <junit.jupiter.version>5.5.2</junit.jupiter.version>
         <junit.platform.version>1.5.2</junit.platform.version>
         <lambda.version>5.2.0</lambda.version>
+        <traitor.version>1.3.0</traitor.version>
     </properties>
 
     <dependencies>
@@ -59,8 +60,9 @@
         </dependency>
         <dependency>
             <groupId>com.jnape.palatable</groupId>
-            <artifactId>shoki</artifactId>
-            <version>1.0-alpha-1</version>
+            <artifactId>traitor</artifactId>
+            <version>${traitor.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
