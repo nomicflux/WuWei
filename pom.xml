@@ -8,6 +8,33 @@
     <artifactId>wuwei</artifactId>
     <version>0.2</version>
 
+    <name>WuWei</name>
+    <description>
+      Monad and utilities for safe and functional mutability
+    </description>
+
+    <url>http://github.com/nomicflux/WuWei</url>
+
+    <licenses>
+      <license>
+        <name>MIT License</name>
+        <url>http://www.opensource.org/licenses/mit-license.php</url>
+      </license>
+    </licenses>
+
+    <developers>
+      <developer>
+        <name>Michael Anderson</name>
+        <email>nomicflux@gmail.com</email>
+      </developer>
+    </developers>
+
+    <scm>
+      <connection>scm:git:git://github.com/nomicflux/WuWei.git</connection>
+      <developerConnection>scm:git:ssh://github.com:nomicflux/WuWei.git</developerConnection>
+      <url>http://github.com/nomicflux/WuWei/tree/master</url>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -93,6 +120,26 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
