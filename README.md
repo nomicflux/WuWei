@@ -1,4 +1,6 @@
 # WuWei - Functional Mutability
+=======
+[![WuWei](https://img.shields.io/maven-central/v/io.ataraxic.nomicflux/WuWei.svg)](http://search.maven.org/#search%7Cga%7C1%7Cio.ataraxic.nomicflux.WuWei)
 
 Relies on [Lambda](https://github.com/palatable/lambda/).
 
